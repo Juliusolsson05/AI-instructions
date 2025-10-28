@@ -1,0 +1,183 @@
+# Comprehensive Guide for Building and Styling ChatGPT Apps
+
+This document consolidates OpenAI's **design**, **styling**, **interaction** and **submission** guidelines for ChatGPT apps into a single reference. It is intended as a comprehensive, programmatic guide that your AI agent can consume to generate an app that passes OpenAI's review. Wherever possible, actionable requirements are stated explicitly (e.g., number of call‑to‑action buttons, permitted color usage, code‑level instructions). Citations link back to the official documentation.
+
+## 1 Introduction
+
+ChatGPT apps are developer‑built experiences that live inside the ChatGPT interface. They extend what users can do without interrupting the conversational flow by presenting interactive widgets-cards, carousels, full‑screen views or floating windows-directly in the chat[\[1\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Overview). Good apps feel like native parts of ChatGPT: they help users accomplish meaningful tasks such as booking, ordering or tracking, rather than showing long‑form content, complex workflows or advertisements[\[2\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Apps%20are%20most%20valuable%20when,a%20clear%20call%20to%20action). The core principles are:
+
+- **Conversational** - fits seamlessly into the chat
+- **Intelligent** - uses context to surface relevant actions
+- **Simple** - focuses on one clear outcome per interaction
+- **Responsive** - quick and lightweight
+- **Accessible** - inclusive of users with assistive technologies[\[3\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Principles)
+
+Developers customise _content_ and _brand presence_, but system‑level elements (navigation, voice, chrome, composer) remain controlled by ChatGPT[\[4\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Boundaries).
+
+## 2 UI Surfaces and Interaction Patterns
+
+ChatGPT provides several display modes for apps. Each mode has defined use cases and layout rules that must be respected.
+
+| Mode | Purpose | Key Requirements | When to Use |
+| --- | --- | --- | --- |
+| **Inline Card** | Default, lightweight widget embedded before the model response[\[5\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Inline). | Only one clear action, with up to **two buttons** (primary + optional secondary). No tabs or deep navigation, no nested scrolling[\[6\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=primary%20CTA%20and%20one%20optional,ChatGPT%20features%20in%20a%20card). Edits should persist; allow simple inline text edits. | Quick confirmations, small data summaries (map, order status) or a self‑contained tool (audio player)[\[7\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=). |
+| **Inline Carousel** | Horizontally scrollable set of cards[\[8\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=A%20set%20of%20cards%20presented,and%20choose%20from%20multiple%20options). | 3-8 items for scannability; each item has an image, title, and ≤2 lines of metadata[\[9\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Rules%20of%20thumb); one CTA per item. | Present small lists like restaurants, songs or events. |
+| **Fullscreen** | Immersive view overlaying ChatGPT with composer visible[\[10\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Fullscreen). | Keep the composer present; design for multi‑step workflows but avoid recreating a native app[\[11\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Rules%20of%20thumb). | Rich tasks (maps with pins, editing canvases, browsing listings). |
+| **Picture‑in‑Picture (PiP)** | Floating window pinned while conversation continues[\[12\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Picture). | Auto‑close at session end; ensure PiP responds to composer input; avoid overcrowding with controls[\[13\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Rules%20of%20thumb). | Live sessions (games, quizzes, ongoing collaboration). |
+
+### Component Planning
+
+- **Clarify interaction** - Decide if the component is a viewer (read‑only chart, dashboard) or editor (form, kanban board), whether it's single‑shot or multi‑turn, and which display mode fits[\[14\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Clarify%20the%20user%20interaction). Sketch the states (e.g., empty state, loading, error) ahead of implementation.
+- **Map data requirements** - Define the JSON payload returned by your tool, including machine‑readable IDs for follow‑up calls; specify initial state using window.openai.toolOutput and update the component using callTool results[\[15\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Map%20data%20requirements).
+- **Responsive layout** - Design components for both desktop and mobile. Set a max width and use adaptive breakpoints. Respect system dark mode (color-scheme) and include focus states for keyboard navigation[\[16\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Design%20for%20responsive%20layouts). Document CSS variables and font stacks at the beginning of the project[\[17\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Design%20for%20responsive%20layouts).
+- **State contract** - Use window.openai.setWidgetState to persist UI state (e.g., selected item, scroll position); store authoritative data server‑side. Plan how server changes merge back into component state[\[18\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Define%20the%20state%20contract).
+- **Telemetry & debugging** - Emit analytics events for component loads, button clicks and validation errors; log tool call IDs to trace issues end‑to‑end. Provide fallbacks when components fail to load (e.g., display structured JSON and prompt the user to retry)[\[19\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Plan%20telemetry%20and%20debugging%20hooks).
+
+### Discovery and Entry Points
+
+- **Named mention** - If the user names your app at the start of a prompt, it surfaces automatically[\[20\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=Named%20mention).
+- **In‑conversation discovery** - When the user prompts, the model considers conversation context, brand mentions/citations, your tool metadata and the user's linking state[\[21\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=In). Write action‑oriented tool descriptions (e.g., "Use this when the user wants to view their kanban board")[\[22\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=You%20influence%20in).
+- **Directory listing** - Provide a clear name, icon, short and long descriptions, tags and optional screenshots in the directory[\[23\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=Directory). Use clear, accurate metadata; avoid promotional language.
+- **Entry points** - Linked apps can appear via in‑conversation entry (model decides) or the launcher (+ button), where users explicitly pick an app. Include deep links or starter prompts in the launcher listing; align metadata with tasks you support[\[24\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=Entry%20points).
+
+## 3 Visual Design & Theming
+
+### Color
+
+- **Use system colors**: text, icons and spatial elements must use ChatGPT's palette. Do _not_ redefine base colors[\[25\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Color).
+- **Brand accents sparingly**: logos and icons can use accent colors, and primary buttons may use a brand accent; do not override backgrounds or text colors, and avoid custom gradients or patterns[\[26\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,buttons%20inside%20app%20display%20modes).
+- **Accent usage**: brand colors may be used on badges or call‑to‑action buttons; never change text color or apply color to text‑area backgrounds[\[27\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Use%20brand%20colors%20on%20accents,or%20other%20core%20component%20styles).
+
+### Typography
+
+- **Inherit system font**: ChatGPT uses platform‑native fonts (SF Pro on iOS, Roboto on Android). Do not embed custom fonts[\[28\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Typography).
+- **Follow sizing rules**: respect system sizing for headings, body and captions. Limit variation and prefer "body" or "body‑small" sizes[\[29\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,small%20sizes).
+- **No custom fonts**: even in full‑screen modes, always use the system font variables[\[30\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Don%E2%80%99t%20use%20custom%20fonts%2C%20even,system%20font%20variables%20wherever%20possible).
+
+### Spacing & Layout
+
+- **Grid and margins**: use ChatGPT's grid spacing for cards, collections and panels; avoid edge‑to‑edge text[\[31\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Spacing%20%26%20layout).
+- **Consistent padding**: maintain uniform padding around elements; respect system corner radii[\[32\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,and%20CTA%20in%20a%20clear).
+- **Hierarchy**: present headline, supporting text and CTA in a clear order[\[33\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,CTA%20in%20a%20clear%20order).
+
+### Icons & Imagery
+
+- **System icon style**: use monochromatic, outlined icons or custom icons that match ChatGPT's visual style[\[34\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,world%20%E2%80%94%20monochromatic%20and%20outlined).
+- **Logo placement**: do not include your logo in the card; ChatGPT automatically displays your app name and icon[\[35\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,before%20the%20widget%20is%20rendered).
+- **Aspect ratios**: images must follow enforced aspect ratios to avoid distortion[\[36\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,aspect%20ratios%20to%20avoid%20distortion).
+
+### Accessibility
+
+- **Contrast**: meet or exceed WCAG AA contrast ratios for text/background combinations[\[37\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Accessibility).
+- **Alt‑text**: provide descriptive alt text for all images[\[38\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Accessibility).
+- **Text resizing**: ensure layouts adapt gracefully when users increase text size[\[38\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Accessibility).
+
+### Tone and Proactivity
+
+- **ChatGPT owns the voice**: your app's responses should feel like natural extensions of ChatGPT's tone[\[39\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Tone%20ownership).
+- **Concise, context‑driven copy**: avoid spam, jargon or promotional language; prioritise helpfulness over brand personality[\[40\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Content%20guidelines).
+- **Proactive nudges**: only resurface contextually (e.g., order ready, ride arriving)[\[41\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Proactivity%20rules). Unsolicited promotions or repeated upsells are disallowed. Always explain why the nudge is appearing[\[42\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Transparency).
+
+## 4 App Developer Policies
+
+### Purpose & Originality
+
+- Your app must have a clear, valuable purpose and do what it promises. Copycats, misleading names or static frames with no interaction will be rejected[\[43\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Purpose%20and%20originality).
+- Use only intellectual property you own or are licensed to use. Apps must not suggest they are made or endorsed by OpenAI[\[43\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Purpose%20and%20originality).
+
+### Quality & Reliability
+
+- Apps must behave predictably; outputs should be accurate and relevant[\[44\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Quality%20and%20reliability).
+- Thoroughly test for stability and performance. Apps that crash, hang or show inconsistent behaviour-or are submitted as betas-will be rejected[\[45\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Before%20submission%2C%20apps%20must%20be,demos%20will%20not%20be%20accepted).
+
+### Metadata
+
+- Use clear, accurate names and descriptions; screenshots should show real functionality[\[46\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Metadata).
+- Tool titles and annotations must clearly convey what each tool does and whether it is read‑only or can modify data[\[46\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Metadata).
+
+### Authentication & Permissions
+
+- If your app requires authentication, the flow must be explicit and transparent[\[47\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Authentication%20and%20permissions).
+- Limit requested permissions to what is necessary for your app to function. Provide demo credentials for reviewers[\[47\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Authentication%20and%20permissions).
+
+### Safety
+
+- Comply with OpenAI's usage policies; do not engage in prohibited activities[\[48\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Safety).
+- Target a general audience; apps for 13-17‑year‑olds are allowed, but apps targeting children under 13 are not[\[49\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Appropriateness).
+- Respect user intent: respond only to what the user asked; avoid unrelated content or data collection beyond necessity[\[50\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Respect%20user%20intent).
+- Fair play: do not discourage use of other apps or mislead the model into preferring your app[\[51\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Fair%20play).
+- Third‑party integrations: obtain proper authorization before accessing external APIs; never bypass rate limits or access controls[\[52\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Third).
+
+### Privacy
+
+- **Privacy policy**: submissions must include a clear policy explaining what data is collected and how it is used[\[53\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Privacy).
+- **Data minimization**: collect only data necessary to perform the task; avoid broad "just in case" fields[\[54\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Data%20collection).
+- **Sensitive data**: never collect or process payment card information, medical data, government identifiers, API keys or passwords[\[55\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,API%20keys%2C%20or%20passwords).
+- **Data boundaries**: avoid requesting raw location fields; obtain location via client‑controlled channels[\[56\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,access%2C%20and%20keeps%20location%20handling). Do not reconstruct the chat log; operate only on explicit snippets[\[57\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=auditable%20and%20revocable.%20,limited%20to%20intentionally%20shared%20content).
+- **Transparency & user control**: do not track or profile users unless disclosed, narrowly scoped and compliant[\[58\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Transparency%20and%20user%20control). Mark write actions clearly and require confirmation for operations that modify external state[\[59\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,approvals%2C%20or%20prompts%20before%20execution). Any operation that sends data outside the current boundary must be surfaced as a write action[\[60\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,side%20security%20expectations).
+
+### Developer Verification & Support
+
+- Submissions must come from verified individuals or organisations; misrepresentation will result in removal[\[61\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Developer%20verification).
+- Provide accurate customer support contact details[\[62\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Support%20contact%20details).
+
+### After Submission
+
+- OpenAI may perform automated or manual reviews; you will receive feedback if your app is rejected and may appeal[\[63\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=After%20submission).
+- Inactive or non‑compliant apps may be removed at any time; changes to tool names or signatures require resubmission[\[64\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Maintenance%20and%20removal).
+
+### Security & Privacy Best Practices
+
+While not strictly design rules, security guidelines influence acceptance:
+
+- Request only the scopes and network permissions you need; obtain explicit user consent for account linking and write actions[\[65\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Principles).
+- Validate all input server‑side and keep audit logs; assume prompt injection and malicious inputs will reach your server[\[66\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=,everything%20and%20keep%20audit%20logs).
+- Include only data required for the current prompt; avoid embedding secrets; redact personally identifiable information before logging[\[67\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Data%20handling).
+- Review tool descriptions regularly to discourage misuse; require human confirmation for irreversible operations[\[68\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Prompt%20injection%20and%20write%20actions).
+- Widgets run in a sandboxed iframe: they cannot access privileged browser APIs; use fetch only within the CSP[\[69\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Network%20access). Use OAuth 2.1 with PKCE and enforce scopes on every call[\[70\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Authentication%20%26%20authorization).
+- Conduct security reviews before launch and keep dependencies patched[\[71\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Operational%20readiness).
+
+## 5 Code‑Level Checklist for the AI Agent
+
+When instructing your AI agent to generate or modify your app's code, incorporate these explicit rules:
+
+- **Import or define system design tokens** (colors, fonts, spacing) instead of hard‑coding values. Use variables like --color-text-primary, --color-background-default. Only override accent variables for buttons and badges.
+- **Enforce a typography scale** using the system font stack; define body and body-small classes and avoid custom fonts or sizes.
+- **Create reusable card and carousel components** with props for title, image, metadata, primaryAction and secondaryAction. The component should prevent internal scrolling and limit actions to two buttons.
+- **Validate all data** coming from the assistant before rendering: ensure fields exist, contain no scripts or HTML, and meet expected lengths.
+- **Generate alt‑text** automatically based on image context if none is provided; include aria-labels on interactive elements.
+- **Implement dark‑mode support** by honouring the color-scheme media query and ensuring adequate contrast in both light and dark themes.
+- **Persist state** using window.openai.setWidgetState whenever the user edits or selects items, and merge server responses back into the local state.
+- **Log analytics and errors**: each component should emit events for mount, click and validation failures. Use unique IDs to link logs to tool calls for debugging.
+- **Write tests** that verify:
+- No card has more than two CTAs.
+- Contrast ratios meet WCAG AA.
+- Font declarations use system stacks.
+- Components display correctly on narrow and wide viewports.
+- Sensitive data fields are never rendered.
+
+By adhering to these rules in your code generation pipeline, your AI agent can systematically build ChatGPT apps that meet OpenAI's visual style, interaction paradigms and policy requirements.
+
+## 6 Summary
+
+Building apps for ChatGPT requires more than connecting an API: your app must feel native to ChatGPT, respect user trust and follow rigorous design and policy standards. This guide merges high‑level design principles with explicit implementation rules to help your AI agent create a compliant app without manual styling. Use the checklists and guidelines above to enforce consistent colors, typography, spacing, layout, tone, discovery, safety and privacy. Following these standards will dramatically increase the likelihood that your app passes OpenAI's review and delivers a trustworthy, delightful experience to users.
+
+[\[1\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Overview) [\[2\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Apps%20are%20most%20valuable%20when,a%20clear%20call%20to%20action) [\[3\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Principles) [\[4\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Boundaries) [\[5\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Inline) [\[6\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=primary%20CTA%20and%20one%20optional,ChatGPT%20features%20in%20a%20card) [\[7\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=) [\[8\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=A%20set%20of%20cards%20presented,and%20choose%20from%20multiple%20options) [\[9\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Rules%20of%20thumb) [\[10\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Fullscreen) [\[11\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Rules%20of%20thumb) [\[12\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Picture) [\[13\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Rules%20of%20thumb) [\[25\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Color) [\[26\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,buttons%20inside%20app%20display%20modes) [\[27\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Use%20brand%20colors%20on%20accents,or%20other%20core%20component%20styles) [\[28\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Typography) [\[29\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,small%20sizes) [\[30\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Don%E2%80%99t%20use%20custom%20fonts%2C%20even,system%20font%20variables%20wherever%20possible) [\[31\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Spacing%20%26%20layout) [\[32\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,and%20CTA%20in%20a%20clear) [\[33\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,CTA%20in%20a%20clear%20order) [\[34\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,world%20%E2%80%94%20monochromatic%20and%20outlined) [\[35\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,before%20the%20widget%20is%20rendered) [\[36\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=,aspect%20ratios%20to%20avoid%20distortion) [\[37\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Accessibility) [\[38\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Accessibility) [\[39\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Tone%20ownership) [\[40\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Content%20guidelines) [\[41\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Proactivity%20rules) [\[42\]](https://developers.openai.com/apps-sdk/concepts/design-guidelines/#:~:text=Transparency) App design guidelines
+
+<https://developers.openai.com/apps-sdk/concepts/design-guidelines/>
+
+[\[14\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Clarify%20the%20user%20interaction) [\[15\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Map%20data%20requirements) [\[16\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Design%20for%20responsive%20layouts) [\[17\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Design%20for%20responsive%20layouts) [\[18\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Define%20the%20state%20contract) [\[19\]](https://developers.openai.com/apps-sdk/plan/components#:~:text=Plan%20telemetry%20and%20debugging%20hooks) Design components
+
+<https://developers.openai.com/apps-sdk/plan/components>
+
+[\[20\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=Named%20mention) [\[21\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=In) [\[22\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=You%20influence%20in) [\[23\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=Directory) [\[24\]](https://developers.openai.com/apps-sdk/concepts/user-interaction#:~:text=Entry%20points) User Interaction
+
+<https://developers.openai.com/apps-sdk/concepts/user-interaction>
+
+[\[43\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Purpose%20and%20originality) [\[44\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Quality%20and%20reliability) [\[45\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Before%20submission%2C%20apps%20must%20be,demos%20will%20not%20be%20accepted) [\[46\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Metadata) [\[47\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Authentication%20and%20permissions) [\[48\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Safety) [\[49\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Appropriateness) [\[50\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Respect%20user%20intent) [\[51\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Fair%20play) [\[52\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Third) [\[53\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Privacy) [\[54\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Data%20collection) [\[55\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,API%20keys%2C%20or%20passwords) [\[56\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,access%2C%20and%20keeps%20location%20handling) [\[57\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=auditable%20and%20revocable.%20,limited%20to%20intentionally%20shared%20content) [\[58\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Transparency%20and%20user%20control) [\[59\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,approvals%2C%20or%20prompts%20before%20execution) [\[60\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=,side%20security%20expectations) [\[61\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Developer%20verification) [\[62\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Support%20contact%20details) [\[63\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=After%20submission) [\[64\]](https://developers.openai.com/apps-sdk/app-developer-guidelines#:~:text=Maintenance%20and%20removal) App developer guidelines
+
+<https://developers.openai.com/apps-sdk/app-developer-guidelines>
+
+[\[65\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Principles) [\[66\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=,everything%20and%20keep%20audit%20logs) [\[67\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Data%20handling) [\[68\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Prompt%20injection%20and%20write%20actions) [\[69\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Network%20access) [\[70\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Authentication%20%26%20authorization) [\[71\]](https://developers.openai.com/apps-sdk/guides/security-privacy#:~:text=Operational%20readiness) Security & Privacy
+
+<https://developers.openai.com/apps-sdk/guides/security-privacy>
